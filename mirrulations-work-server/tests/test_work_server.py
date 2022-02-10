@@ -280,3 +280,14 @@ def mock_write_results(mocker):
         'mirrserver.work_server.write_results',
         return_value=None
     )
+
+def test_create_mock_redis_is_connected():
+    redis_server = FakeServer()
+    redis_server.connected = True
+    assert redis_server.connected == True
+
+def test_create_mock_redis_is_disconnected():
+    redis_server = FakeServer()
+    redis_server.connected = False
+    assert redis_server.connected == False
+

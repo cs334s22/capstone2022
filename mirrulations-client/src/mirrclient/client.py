@@ -57,7 +57,16 @@ class Client:
 
 def execute_client_task(_client):
     print('Requesting new job from server...')
-    job_id, url = _client.get_job()
+    try:
+        job_id, url = _client.get_job()
+    except RequestConnectionError:
+        print('Unable to connect to the server. '
+            'Trying again in a minute...')
+        time.sleep(60)
+    except (HTTPError, RequestException):
+        print('HTTP Error')
+    except NoJobsAvailableException:
+        print('No jobs available.')
     print('Received job!')
     result = perform_job(url)
     print('Sending result back to server...')
@@ -85,24 +94,16 @@ def request_job(endpoint, data, params):
 
 
 def assure_request(request, url, sleep_time=60, **kwargs):
+    response = request(url, **kwargs)
+    check_status_code(response)
+    response.raise_for_status()
+    return response
+    
     # while True:
     #     response = attempt_request(request, url, sleep_time, **kwargs)
     #     if response is not None:
     #         return response
-    response = request(url, **kwargs)
-    while response.status_code != 200:
-        try:
-            response = request(url, **kwargs)
-            check_status_code(response)
-            response.raise_for_status()
-        except RequestConnectionError:
-            print('Unable to connect to the server. '
-                'Trying again in a minute...')
-            time.sleep(sleep_time)
-        except (HTTPError, RequestException):
-            print('HTTP Error')
-        
-    return response
+
 
 
 def attempt_request(request, url, sleep_time, **kwargs):

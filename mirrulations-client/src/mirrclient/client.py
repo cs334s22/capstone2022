@@ -31,7 +31,7 @@ class Client:
         endpoint = f'{self.url}/get_client_id'
         response = assure_request(requests.get, endpoint)
         client_id = int(response.json()['client_id'])
-        write_client_id('client.cfg', client_id)
+        self.write_client_id('client.cfg')
         return client_id
 
     def get_job(self):
@@ -54,23 +54,33 @@ class Client:
         # print(dumps(data))
         assure_request(requests.put, endpoint, json=dumps(data), params=params)
 
+    def execute_task(self):
+        print('Requesting new job from server...')
+        job_id, url = self.get_job()
+        print('Received job!')
+        result = self.perform_job(url)
+        print('Sending result back to server...')
+        self.send_job_results(job_id, result)
+        print('Job complete!\n')
 
-def execute_client_task(_client):
-    print('Requesting new job from server...')
-    job_id, url = _client.get_job()
-    print('Received job!')
-    result = perform_job(url, _client.api_key)
-    print('Sending result back to server...')
-    _client.send_job_results(job_id, result)
-    print('Job complete!\n')
+    def perform_job(self, url):
+        print(f'Getting docket at {url}')
+        url = url + f'?api_key={self.api_key}'
+        json = assure_request(requests.get, url).json()
+        print('Done with current job!')
+        return json
+
+    def write_client_id(self, filename):
+        with open(filename, 'w', encoding='utf8') as file:
+            file.write(str(self.client_id))
 
 
-def perform_job(url, api_key):
-    print(f'Getting docket at {url}')
-    url = url + f'?api_key={api_key}'
-    json = assure_request(requests.get, url).json()
-    print('Done with current job!')
-    return json
+def read_client_id(filename):
+    try:
+        with open(filename, 'r', encoding='utf8') as file:
+            return int(file.readline())
+    except FileNotFoundError:
+        return -1
 
 
 def request_job(endpoint, data, params):
@@ -87,25 +97,20 @@ def request_job(endpoint, data, params):
 
 def assure_request(request, url, sleep_time=60, **kwargs):
     while True:
-        response = attempt_request(request, url, sleep_time, **kwargs)
+        response = request(url, **kwargs)
+        try:
+            check_status_code(response)
+            response.raise_for_status()
+        except RequestConnectionError:
+            print('Unable to connect to the server. '
+                  'Trying again in a minute...')
+            time.sleep(sleep_time)
+        except HTTPError:
+            print('An HTTP Error occured.')
+        except RequestException:
+            print('A Request Error occured.')
         if response is not None:
             return response
-
-
-def attempt_request(request, url, sleep_time, **kwargs):
-    try:
-        response = request(url, **kwargs)
-        check_status_code(response)
-        response.raise_for_status()
-    except RequestConnectionError:
-        print('Unable to connect to the server. '
-              'Trying again in a minute...')
-        time.sleep(sleep_time)
-    except (HTTPError, RequestException):
-        return response
-    else:
-        return response
-    return None
 
 
 def check_status_code(response):
@@ -114,19 +119,6 @@ def check_status_code(response):
         print(response.json()['error'])
     elif status_code > 400:
         print('Server error. Trying again in a minute...')
-
-
-def read_client_id(filename):
-    try:
-        with open(filename, 'r', encoding='utf8') as file:
-            return int(file.readline())
-    except FileNotFoundError:
-        return -1
-
-
-def write_client_id(filename, client_id):
-    with open(filename, 'w', encoding='utf8') as file:
-        file.write(str(client_id))
 
 
 def get_key_path_string(results, key):
@@ -166,7 +158,7 @@ if __name__ == '__main__':
     print('Your ID is: ', client.client_id)
     while True:
         try:
-            execute_client_task(client)
+            client.execute_task()
         except NoJobsAvailableException:
             print("No Jobs Available")
         time.sleep(3.6)

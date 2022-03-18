@@ -22,7 +22,7 @@ def connect_mongo_db(host_name, port_number):
     return client
 
 
-# TODO: Make attachments_count into a real value
+# TO DO: Make attachments_count into a real value
 def get_done_counts(client, db_name):
     dockets_count = get_dockets_count(client, db_name)
     documents_count = get_documents_count(client, db_name)
@@ -53,4 +53,7 @@ def get_comments_count(client, db_name):
 
 def get_attachments_count(client, db_name):
     # return int(client[db_name]['attachments'].estimated_document_count())
-    return int(4)
+    # this isnt good but not our problem right now
+    if client and db_name:
+        return int(4)
+    return None

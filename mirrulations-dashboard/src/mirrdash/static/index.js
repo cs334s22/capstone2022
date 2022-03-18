@@ -31,7 +31,7 @@ const updateStatus = (container, status) => {
 
 }
 
-const updates= (id, value) => {
+const updateCounts = (id, value) => {
     document.getElementById(id+'-number').textContent = value;
 
 }
@@ -57,15 +57,13 @@ const updateDashboardData = () => {
             client15,
             client16,
             client17,
-            clients_total, // TODO: is this still used?
             jobs_total,
             nginx,
-            num_attachments_done, // TODO: add these in
+            num_attachments_done,
             num_comments_done,
             num_dockets_done,
             num_documents_done,
             num_jobs_done, 
-            num_jobs_in_progress, // TODO: is this still used? 
             num_jobs_waiting,
             mongo,
             redis,
@@ -97,21 +95,11 @@ const updateDashboardData = () => {
         updateStatus('work-generator-status', work_generator);
         updateStatus('work-server-status', work_server);
         // Counts
-        updates("attachments-done",num_attachments_done);
-        updates("comments-done",num_comments_done);
-        updates("dockets-done",num_dockets_done);
-        updates("documents-done",num_documents_done);
-        //console.log("attachments: "+num_attachments_done+'\n');
-        // console.log("comments: "+num_comments_done+'\n');
-        // console.log("dockets: "+num_dockets_done+'\n');
-        // console.log("documents: "+num_documents_done+'\n');
-        // console.log("total jobs done:"+num_jobs_done+'\n');
-        // console.log("jobs total:"+jobs_total);
+        updateCounts("attachments-done",num_attachments_done);
+        updateCounts("comments-done",num_comments_done);
+        updateCounts("dockets-done",num_dockets_done);
+        updateCounts("documents-done",num_documents_done);
+        
     })
-    //.catch((err) => console.log(err));
+    .catch((err) => console.log(err));
 }
-
-
-
-
-

@@ -9,14 +9,17 @@ window.addEventListener('load', function init() {
     setInterval(updateDashboardData, 5000);
 })
 
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 const updateHtmlValues = (id, value, total) => {
     let percent = (value/total) * 100;
     percent = isNaN(percent) ? 0 : Math.round(percent * 10) / 10;
-    document.getElementById(id+'-number').textContent = value;
+    document.getElementById(numberWithCommas(id)+'-number').textContent = value;
     document.getElementById(id+'-circle-percentage').textContent = `${percent}%`;
     document.getElementById(id+'-circle-front').style.strokeDasharray = `${percent}, 100`;
 }
-
 
 const updateStatus = (container, status) => {
         let status_span = document.getElementById(container)

@@ -11,16 +11,6 @@ class WorkServer:
         self.data = DataStorage()
 
 
-def check_for_database(func):
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except redis.exceptions.ConnectionError:
-            body = {'error': 'Cannot connect to the database'}
-            return False, jsonify(body), 500
-    return wrapper
-
-
 def check_request_had_valid_client_id(workserver, client_id):
     if client_id is None:
         return False, jsonify({'error': 'Client ID was not provided'}), 401
@@ -29,20 +19,23 @@ def check_request_had_valid_client_id(workserver, client_id):
     return (True,)
 
 
-@check_for_database
 def get_job(workserver):
-    client_id = request.args.get('client_id')
-    success, *values = check_request_had_valid_client_id(workserver, client_id)
-    if not success:
-        return False, values[0], values[1]
-    if workserver.redis.llen('jobs_waiting_queue') == 0:
-        return False, jsonify({'error': 'There are no jobs available'}), 403
-    job = json.loads(workserver.redis.lpop('jobs_waiting_queue'))
-    job_id = job['job_id']
-    url = job['url']
-    workserver.redis.hset('jobs_in_progress', job_id, url)
-    workserver.redis.hset('client_jobs', job_id, client_id)
-    return True, job_id, url
+    try:
+        client_id = request.args.get('client_id')
+        success, *values = check_request_had_valid_client_id(workserver, client_id)
+        if not success:
+            return False, values[0], values[1]
+        if workserver.redis.llen('jobs_waiting_queue') == 0:
+            return False, jsonify({'error': 'There are no jobs available'}), 403
+        job = json.loads(workserver.redis.lpop('jobs_waiting_queue'))
+        job_id = job['job_id']
+        url = job['url']
+        workserver.redis.hset('jobs_in_progress', job_id, url)
+        workserver.redis.hset('client_jobs', job_id, client_id)
+        return True, job_id, url
+    except redis.exceptions.ConnectionError:
+         body = {'error': 'Cannot connect to the database'}
+         return False, jsonify(body), 500
 
 
 def check_results(workserver, data, client_id):
@@ -73,44 +66,53 @@ def write_results(directory, path, data):
         file.write(json.dumps(data))
 
 
-@check_for_database
 def put_results(workserver, data):
-    client_id = request.args.get('client_id')
-    success, *values = check_request_had_valid_client_id(workserver, client_id)
-    if not success:
-        return False, values[0], values[1]
-    if 'error' in data['results'] or 'errors' in data['results']:
+    try:
+        client_id = request.args.get('client_id')
+        success, *values = check_request_had_valid_client_id(workserver, client_id)
+        if not success:
+            return False, values[0], values[1]
+        if 'error' in data['results'] or 'errors' in data['results']:
+            job_id = data['job_id']
+            result = workserver.redis.hget('jobs_in_progress', job_id)
+            workserver.redis.hdel('jobs_in_progress', job_id)
+            workserver.redis.hset('invalid_jobs', job_id, result)
+            return (True,)
+        success, *results = check_results(workserver, data, int(client_id))
+        if not success:
+            return (success, *results)
         job_id = data['job_id']
-        result = workserver.redis.hget('jobs_in_progress', job_id)
         workserver.redis.hdel('jobs_in_progress', job_id)
-        workserver.redis.hset('invalid_jobs', job_id, result)
+        if 'attachments_text' in data['results']['data'].keys():
+            print(data['results']['data']['attachments_text'])
+        write_results(results[0], data['directory'], data['results'])
+        workserver.data.add(data['results'])
         return (True,)
-    success, *results = check_results(workserver, data, int(client_id))
-    if not success:
-        return (success, *results)
-    job_id = data['job_id']
-    workserver.redis.hdel('jobs_in_progress', job_id)
-    if 'attachments_text' in data['results']['data'].keys():
-        print(data['results']['data']['attachments_text'])
-    write_results(results[0], data['directory'], data['results'])
-    workserver.data.add(data['results'])
-    return (True,)
+    except redis.exceptions.ConnectionError:
+         body = {'error': 'Cannot connect to the database'}
+         return False, jsonify(body), 500
 
 
-@check_for_database
 def get_client_id(workserver):
-    workserver.redis.incr('total_num_client_ids')
-    return True, int(workserver.redis.get('total_num_client_ids'))
+    try:
+        workserver.redis.incr('total_num_client_ids')
+        return True, int(workserver.redis.get('total_num_client_ids'))
+    except redis.exceptions.ConnectionError:
+         body = {'error': 'Cannot connect to the database'}
+         return False, jsonify(body), 500
 
 
-@check_for_database
 def check_client_id_is_valid(workserver, client_id):
-    num_ids = workserver.redis.get('total_num_client_ids')
-    total_ids = 0 if num_ids is None else int(num_ids)
-    if not client_id.isdigit():
-        return False
-    client_id = int(client_id)
-    return 0 < client_id <= total_ids
+    try:
+        num_ids = workserver.redis.get('total_num_client_ids')
+        total_ids = 0 if num_ids is None else int(num_ids)
+        if not client_id.isdigit():
+            return False
+        client_id = int(client_id)
+        return 0 < client_id <= total_ids
+    except redis.exceptions.ConnectionError:
+         body = {'error': 'Cannot connect to the database'}
+         return False, jsonify(body), 500
 
 
 def create_server(database):

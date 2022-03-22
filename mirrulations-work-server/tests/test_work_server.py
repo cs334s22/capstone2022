@@ -166,6 +166,28 @@ def test_client_attempts_to_put_job_that_does_not_exist(mock_server):
     assert response.get_json() == expected
 
 
+def test_put_resuts_no_database(mock_server, mocker):
+
+    mock_write_results(mocker)
+    mock_server.redis.hset('jobs_in_progress', 2, 3)
+    mock_server.redis.hset('client_jobs', 2, 1)
+    mock_server.redis.set('total_num_client_ids', 1)
+
+    data = dumps({'job_id': 2, 'results': {"errors": [{
+        "status": "500",
+        "title": "INTERNAL_SERVER_ERROR",
+        "detail": "Cannot connect to the database"}]}})
+
+    params = {'client_id': 1}
+    mock_server.redis_server.connected = False
+    response = mock_server.client.put('/put_results',
+                                      json=data, query_string=params)
+    assert response.status_code == 500
+    # Not sure this is the best way to do this...
+    expected = {'error': 'Cannot connect to the database'}
+    assert response.get_json() == expected
+
+
 def test_put_results_returns_correct_job(mock_server, mocker):
 
     mock_write_results(mocker)

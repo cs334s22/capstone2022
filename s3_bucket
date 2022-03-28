@@ -2,3 +2,21 @@ This is the file that we will put notes in for any information we gather
 on moving all attachments to a s3 bucket
 
 
+## Notes
+
+
+You can store an unlimited amount of items in a bucket
+
+You cannot put a bucket within a bucket
+
+Simple best option is to use amazon s3 standard
+
+    - amazon s3 standard is good for:
+        high availability 
+        used to store frequently accessed data
+        low latancy and high throughput
+
+
+https://www.youtube.com/watch?v=JmrYZPjSDl4 
+
+

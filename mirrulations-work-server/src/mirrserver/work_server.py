@@ -72,6 +72,7 @@ def write_results(directory, path, data):
 def put_results(workserver, data):
     check_for_database(workserver)
     client_id = request.args.get('client_id')
+    files = request.files.getlist('files')
     success, *values = check_valid_request_client_id(workserver, client_id)
     if not success:
         return False, values[0], values[1]
@@ -88,6 +89,9 @@ def put_results(workserver, data):
     workserver.redis.hdel('jobs_in_progress', job_id)
     if 'attachments_text' in data['results']['data'].keys():
         print(data['results']['data']['attachments_text'])
+        if files:
+            for file in files:
+                file.save(os.path.join('/capstone2022/attachments', file.filename))
     else:
         write_results(results[0], data['directory'], data['results'])
     workserver.data.add(data['results'])

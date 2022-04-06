@@ -67,10 +67,11 @@ class Client:
         # print('****\n\n\n')
         # print(dumps(data))
         # print('****\n\n\n', flush=True)
-        # if files is not None:
-            # requests.put(endpoint, data=data files=files)
-        # else:
-        requests.put(endpoint, json=dumps(data), params=params)
+        if files is not None:
+            requests.put(endpoint, data=dumps(data), files=files, params=params)
+        else:
+            # used to be json=dumps(data), might be more consistent if we use data=dumps(data)
+            requests.put(endpoint, data=dumps(data), params=params) 
 
     def execute_task(self):
         print('Requesting new job from server...')
@@ -100,15 +101,15 @@ class Client:
 
     def perform_attachment_job(self, url, **params): ## NOT FUNCTIONING
         # added **params just in case needed for requests
-        attachments = [] # where we might put attachments
+        attachments = [] # This is a list of tuples ('file', binary file)
         print(url)
         url = url + f'?api_key={self.api_key}'
         attachment_links = get_attachment_links(url, **params)
         
         for link in attachment_links:
-            # go through each obj in list and download attachment
-            attachments.append(('file', requests.get(link))) # returns the binary file
-            # check if its a pdf extract text
+            attachments.append(('file', requests.get(link))) # must have 'file' as first element
+            # check if its a pdf extract text (Maybe just check the last 3 chars?)
+            # attachments.append(('text', extract_text(<attachment>))) # must have 'text' as first element
 
         return attachments
 

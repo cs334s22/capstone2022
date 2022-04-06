@@ -170,32 +170,51 @@ def test_attempt_request_raises_connection_exception(mock_requests, mocker):
         # assert response is None
 
 
-def test_client_sends_attachment_results(mock_requests, mocker):
+def test_client_perform_attachment_job(mock_requests, mocker):
     client = Client()
     client.client_id = 8
     read_mock_client_id(mocker, client.client_id)
     with mock_requests:
         mock_requests.get(
-            f'{BASE_URL}/get_job',
-            json={'job': {'job_id': '1',
-                  'url': 'foo', 'job_type': 'attachments'}},
-            status_code=200
-        )
+            'http://test.com',
+            json={
+                    "data": [{
+                        "attributes": {
+                            "fileFormats": [{
+                                        "fileUrl": "https://downloads.doc",
+                                        "format": "doc",
+                                        "size": 43008}]}
+                                    }]
+                                },
+            status_code=200)
 
-        mock_requests.put(f'{BASE_URL}/put_results', text='{}')
-        client.execute_task()
-        put_request = mock_requests.request_history[1]
-        json_data = json.loads(put_request.json())
-        saved_data = json_data['results']['data']
+        # mock_requests.put(f'{BASE_URL}/put_results', text='{}')
+        client.perform_attachment_job('http://test.com')
+        # put_request = mock_requests.request_history[1]
+        # json_data = json.loads(put_request.json())
+        # saved_data = json_data['results']['data']
 
-        assert saved_data['attachments_text'] == ['1']
-        assert saved_data['type'] == 'attachment'
-        assert saved_data['id'] == '1'
-        assert saved_data['attributes']['agencyId'] is None
-        assert saved_data['attributes']['docketId'] is None
-        assert saved_data['attributes']['commentOnDocumentId'] is None
+        # assert saved_data['attachments_text'] == ['1']
+        # assert saved_data['type'] == 'attachment'
+        # assert saved_data['id'] == '1'
+        # assert saved_data['attributes']['agencyId'] is None
+        # assert saved_data['attributes']['docketId'] is None
+        assert False
 
-
+{
+    "data": [
+    {
+            "attributes": {
+                "fileFormats": [
+                    {
+                        "fileUrl": "https://downloads.doc",
+                        "format": "doc",
+                        "size": 43008},
+                    ],
+                        }
+                        }
+                ]
+            }
 def test_read_client_id_success(tmpdir):
     file = tmpdir.join('test_read.txt')
     file.write('1')

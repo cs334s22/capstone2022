@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import requests
 from requests.exceptions import ConnectionError as RequestConnectionError
 from requests.exceptions import HTTPError, RequestException
+import base64
 
 
 class NoJobsAvailableException(Exception):
@@ -52,7 +53,7 @@ class Client:
             job_type = 'other'
         return job_id, url, job_type
 
-    def send_job_results(self, job_id, job_result, files=None):
+    def send_job_results(self, job_id, job_result):
         endpoint = f'{self.url}/put_results'
         if 'errors' in job_result:
             data = {
@@ -67,11 +68,8 @@ class Client:
         # print('****\n\n\n')
         # print(dumps(data))
         # print('****\n\n\n', flush=True)
-        if files is not None:
-            requests.put(endpoint, data=dumps(data), files=files, params=params)
-        else:
-            # used to be json=dumps(data), might be more consistent if we use data=dumps(data)
-            requests.put(endpoint, data=dumps(data), params=params) 
+        requests.put(endpoint, json=dumps(data), params=params)
+
 
     def execute_task(self):
         print('Requesting new job from server...')
@@ -79,12 +77,12 @@ class Client:
         print('Received job!')
         print('Sending result back to server...')
         if job_type == 'attachments':
-            print("this is an attachment")
-            result = self.perform_attachment_job(url)
-            print("this is the result", result)
+            result = self.perform_attachment_job(url, job_id)
+            self.send_job_results(job_id, result)
         else:
             result = self.perform_job(url)
-        self.send_job_results(job_id, result)
+            self.send_job_results(job_id, result)
+        # self.send_job_results(job_id, result)
         print('Job complete!\n')
 
     def perform_job(self, url):
@@ -99,23 +97,23 @@ class Client:
             file.write(str(self.client_id))
 
 
-    def perform_attachment_job(self, url, **params):
+    def perform_attachment_job(self, url, job_id, **params):
         # added **params just in case needed for requests
-        attachments = [] # This is a list of tuples ('file', binary file)
-        print(url)
+        attachments = {} # attachment_name : encoded_file
         url = url + f'?api_key={self.api_key}'
-        # attachment_links = get_attachment_links(url, **params)
         response_from_related = requests.get(url, params=params)
-        print(response_from_related)
-        response_from_related = load(response_from_related)
-        print(type(response_from_related))
-        file_formats = response_from_related["data"][0]["attributes"]["fileFormats"]
-        attachment_links= loads(file_formats)
+        response_from_related = response_from_related.json()
+
+        file_info = response_from_related["data"][0]["attributes"]["fileFormats"]
+        file_urls = []
+        file_types = []
+        for link in file_info:
+            file_urls.append(link["fileUrl"])
+            file_types.append(link["format"])
         
-        for link in attachment_links:
-            attachments.append(('file', requests.get(link))) # must have 'file' as first element
-            # check if its a pdf extract text (Maybe just check the last 3 chars?)
-            # attachments.append(('text', extract_text(<attachment>))) # must have 'text' as first element
+        for i, (link, file_type) in enumerate(zip(file_urls, file_types)):
+            attachment = requests.get(link)
+            attachments[f'{job_id}_{i}.{file_type}'] = base64.b64encode(attachment.content).decode('ascii')
 
         return attachments
 

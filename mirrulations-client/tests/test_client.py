@@ -1,5 +1,4 @@
 import os
-import json
 from functools import partial
 from pytest import fixture, raises
 import requests
@@ -189,7 +188,7 @@ def test_client_perform_attachment_job(mock_requests, mocker):
             status_code=200)
 
         # mock_requests.put(f'{BASE_URL}/put_results', text='{}')
-        client.perform_attachment_job('http://test.com')
+        client.perform_attachment_job('http://test.com', 999)
         # put_request = mock_requests.request_history[1]
         # json_data = json.loads(put_request.json())
         # saved_data = json_data['results']['data']

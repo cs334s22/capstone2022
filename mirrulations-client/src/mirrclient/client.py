@@ -7,6 +7,7 @@ import requests
 from dotenv import load_dotenv
 from requests.exceptions import ConnectionError as RequestConnectionError
 from requests.exceptions import HTTPError
+from mirrclient.Job import Job
 
 
 class NoJobsAvailableException(Exception):
@@ -266,18 +267,15 @@ class Client:
         print('performing job')
         response = self.server_validator.get_request(
             '/get_job', params={'client_id': self.client_id})
-        job = loads(response.text)
-        if 'error' in job:
+        job_json = loads(response.text)
+        if 'error' in job_json:
             raise NoJobsAvailableException()
 
-        job = job['job']
-        job_id = list(job.keys())[0]
-        url = job[job_id]
-        job_type = job['job_type']
-        return job_id, url, job_type
+        return Job(job_json['job'])
 
-    def send_job(self, job_id, job_result, job_type):
+    def send_job(self, job, result):
         """
+        TODO: rewrite
         Returns the job results to the workserver via the server_validator.
         If there are any errors in the job_result, the data json is returned
         as  {'job_id': job_id, 'results': job_result}
@@ -293,16 +291,16 @@ class Client:
         job_result : dict
             results from a performed job
         """
-        data = {
-            'job_type': job_type,
-            'job_id': job_id,
-            'results': job_result
-        }
+        # data = {
+        #     'job_type': job_type,
+        #     'job_id': job_id,
+        #     'results': job_result
+        # }
         # If the job is not an attachment job we need to add an output path
-        if ('errors' not in job_result) and (job_type != 'attachments'):
-            data['directory'] = get_output_path(job_result)
+        if ('errors' not in result) and (job.job_type != 'attachments'):
+            result['directory'] = get_output_path(result)
         self.server_validator.put_request(
-            '/put_results', data, {'client_id': self.client_id})
+            '/put_results', result, {'client_id': self.client_id})
 
     def perform_job(self, job_url):
         """
@@ -368,12 +366,12 @@ class Client:
         based on job_type, then sends back the job results to
         the workserver.
         """
-        job_id, job_url, job_type = self.get_job()
-        if job_type == 'attachments':
-            result = self.perform_attachment_job(job_url)
+        job = self.get_job()
+        if job.job_type == 'attachments':
+            result = self.perform_attachment_job(job.job_url)
         else:
-            result = self.perform_job(job_url)
-        self.send_job(job_id, result, job_type)
+            result = self.perform_job(job.job_url)
+        self.send_job(job, result)
 
 
 if __name__ == '__main__':

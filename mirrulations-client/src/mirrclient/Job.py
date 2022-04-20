@@ -19,10 +19,14 @@ class Job():
         self.assign_job_type()
 
     def assign_job_id(self):
+        # The job id is the key
         self.job_id = list(self.job_json.keys())[0]
 
     def assign_job_url(self):
-        self.job_url = self.job_json[self.job_id]
+        # Job id is used as the key for the job url
+        # Consequently, enforce returning string 
+        #   bc of that badness for testing purposes
+        self.job_url = str(self.job_json[self.job_id])
 
     def assign_job_type(self):
         if 'job_type' in self.job_json:

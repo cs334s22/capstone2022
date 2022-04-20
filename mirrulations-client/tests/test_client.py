@@ -7,6 +7,7 @@ from mirrclient.client import NoJobsAvailableException, Client
 from mirrclient.client import ServerValidator
 from mirrclient.client import is_environment_variables_present
 from mirrclient.client import get_output_path
+# from mirrclient import Job
 
 BASE_URL = 'http://work_server:8080'
 
@@ -91,7 +92,10 @@ def test_client_gets_job(mock_requests):
             status_code=200
         )
         job_info = client.get_job()
-        assert ('1', 1, 'attachments') == job_info
+        assert job_info.job_url == '1'
+        assert job_info.job_id == 1
+        assert job_info.job_type == 'attachments'
+        # assert ('1', 1, 'attachments') == job_info
 
 
 def test_client_throws_exception_when_no_jobs(mock_requests):

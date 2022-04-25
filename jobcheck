@@ -1,6 +1,6 @@
 #!/bin/bash
 # Delete all local data
-rm -rf ~/data/data/*
+rm -rf ~/data/*
 # Bring up just Redis
 docker-compose up -d redis
 # Sets dockets_last_timestamp, documents_last_timestamp, and comments_last_timestamp to our before

@@ -4,10 +4,5 @@ rm -rf ~/data/data_copy/*
 # Bring up just Redis
 docker-compose up -d redis
 # Put now() - 6H in dockets_last_timestamp, documents_last_timestamp, and comments_last_timestamp
-#MGET dockets_last_timestamp
-#SET dockets_last_timestamp (TIME - 21600)
-#MGET documents_last_timestamp
-#SET documents_last_timestamp (TIME - 21600)
-#MGET comments_last_timestamp
-#SET comments_last_timestamp (TIME - 21600)
-#docker-compose up -d nginx mongo work_generator work_server dashboard client1
+python3 set_timestamp.py
+docker-compose up -d nginx mongo work_generator work_server dashboard client1

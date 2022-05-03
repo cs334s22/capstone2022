@@ -309,7 +309,7 @@ class Client:
                 get_urls_and_formats(
                     response_from_related["data"][0]
                     ["attributes"]["fileFormats"])
-        except IndexError:
+        except (IndexError, TypeError):
             return {}
         return self.download_attachments(file_urls, file_types, job_id)
 

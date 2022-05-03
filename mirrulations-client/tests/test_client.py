@@ -368,6 +368,45 @@ def test_client_handles_empty_json_from_regulations(mock_requests):
         assert json_data['results'] == {}
 
 
+def test_client_handles_nonetype_json_from_regulations(mock_requests):
+    server_validator = Validator('http://test.com')
+    client = Client(server_validator, Validator())
+    client.api_key = 1234
+
+    with mock_requests:
+        mock_requests.get(
+            'http://test.com/get_job',
+            json={'job_id': '1',
+                  'url': 'http://url.com',
+                  'job_type': 'attachments',
+                  'reg_id': '1',
+                  'agency': 'foo'},
+            status_code=200
+        )
+        mock_requests.get(
+            'http://url.com?api_key=1234',
+            json={'data': None},
+            status_code=200
+        )
+
+        mock_requests.get(
+            "https://downloads.regulations.gov",
+            json={"data": 'foobar'},
+            status_code=200
+        )
+        mock_requests.put('http://test.com/put_results', text='{}')
+        client.job_operation()
+
+        mock_requests.put(f'{BASE_URL}/put_results', text='{}')
+        client.job_operation()
+        put_request = mock_requests.request_history[2]
+        print(put_request)
+        json_data = json.loads(put_request.json())
+        assert json_data['job_id'] == "1"
+        assert json_data['job_type'] == "attachments"
+        assert json_data['results'] == {}
+
+
 def test_get_output_path_error():
     results = {'error': 'error'}
     output_path = get_output_path(results)

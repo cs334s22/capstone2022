@@ -1,0 +1,10 @@
+#!/bin/bash
+# Delete all local data
+rm -rf ~/data/*
+# Bring up just Redis
+docker-compose up -d redis
+# Sets dockets_last_timestamp, documents_last_timestamp, and comments_last_timestamp to our before
+# current time
+python3 set_timestamp.py
+# Bring up the other containers
+docker-compose up -d nginx mongo work_generator work_server dashboard client1

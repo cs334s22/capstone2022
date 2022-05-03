@@ -51,18 +51,17 @@ if __name__ == '__main__':
     attachment_index = 0
     for x in range(11):
         if x == 0 or x == 1 or x == 2:
-            job = generator.add_job('comments', comments_lst[comment_index])
+            job_queue.add_job(comments_lst[comment_index], job_type='comments', agency='EPA', reg_id='12345')
             comment_index += 1
 
         elif x == 3 or x == 4 or x == 5:
-            job = generator.add_job('documents', documents_lst[document_index])
+            job_queue.add_job(documents_lst[document_index], job_type='documents', agency='EPA', reg_id='12345')
             document_index += 1
 
         elif x == 6:
-            job = generator.add_job('dockets', 'https://api.regulations.gov/v4/dockets/NCUA-2021-0112')
+            job_queue.add_job('https://api.regulations.gov/v4/dockets/NCUA-2021-0112', job_type='dockets', agency='EPA', reg_id='12345')
 
         elif x == 7 or x == 8 or x == 9 or x == 10:
-            job = generator.add_job('attachments', attachments_lst[attachment_index])
+            job_queue.add_job(attachments_lst[attachment_index], job_type='attachments', agency='EPA', reg_id='12345')
             attachment_index += 1
-        database.lpush('jobs_waiting_queue', json.dumps(job))    
 

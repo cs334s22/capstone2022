@@ -9,9 +9,9 @@ test:
 	pytest;
 
 static:
-	flake8 mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server;
-	pycodestyle mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server;
-	pylint mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server;
+	flake8 mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server mirrulations-validation;
+	pycodestyle mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server mirrulations-validation;
+	pylint mirrulations-client mirrulations-dashboard mirrulations-work-generator mirrulations-work-server mirrulations-validation;
 
 clean:
 	# Find and remove all files and  folders that match

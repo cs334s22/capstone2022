@@ -37,3 +37,8 @@ class DataStorage:
         for file in data['results']:
             entry = {'path': path, 'file': file}
             self.attachments.insert_one(entry)
+
+
+    def get_collection_size(self, collection):
+        return self.__getattribute__(collection).count_documents({})
+

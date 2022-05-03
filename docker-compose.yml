@@ -29,6 +29,16 @@ services:
       - mongo
     env_file: env_files/work_gen.env
     restart: always
+  validator:
+    build:
+      context: .
+      dockerfile: mirrulations-validation/Dockerfile
+    depends_on:
+      - redis
+      - mongo
+      - work_generator
+    env_file: env_files/validation.env
+    restart: always
   work_server:
     build:
       context: .

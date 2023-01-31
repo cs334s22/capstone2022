@@ -154,7 +154,7 @@ class Validator:
         """
         try:
             requests.put(f'{self.url}' + endpoint,
-                         json=dumps(data), params=params)
+                         json=dumps(data), params=params, timeout=10)
 
         except (HTTPError, RequestConnectionError):
             print('There was an error handling this response.')

@@ -1,3 +1,4 @@
+from http import server
 import os
 import json
 from pytest import fixture, raises
@@ -171,6 +172,34 @@ def test_client_performs_job(mock_requests):
         assert saved_data['attributes'] == {'agencyId': 'NOAA'}
         assert saved_data['id'] == '1'
         assert saved_data['job_type'] == 'documents'
+
+
+def test_mock_get_timeout(mock_requests):
+    server_validator = Validator('http://test.com/')
+
+    with mock_requests:
+        mock_requests.get('http://test.com/http://test.com/get_results', exc=requests.exceptions.Timeout)
+        try:
+            server_validator.get_request('http://test.com/get_results')
+        except requests.exceptions.Timeout as error:
+            print(error)
+            print("The connection has timed out")
+
+
+def test_mock_put_timeout(mock_requests):
+    server_validator = Validator('http://test.com/')
+
+    with mock_requests:
+        mock_requests.put('http://test.com/http://test.com/put_results?client_id=2001', exc=requests.exceptions.Timeout)
+        try:
+            server_validator.put_request(
+                'http://test.com/put_results',
+                {'job_id': '1'},
+                {'client_id': 2001})
+        except requests.exceptions.Timeout as error:
+            print(error)
+            print("The connection has timed out")
+
 
 
 def test_client_returns_403_error_to_server(mock_requests):

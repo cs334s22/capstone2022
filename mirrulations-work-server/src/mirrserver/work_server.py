@@ -148,7 +148,7 @@ def get_job(workserver):
         return False, values[0], values[1]
     if workserver.redis.llen('jobs_waiting_queue') == 0:
         return False, jsonify({'error': 'No jobs available'}), 403
-    job = json.loads(workserver.redis.lpop('jobs_waiting_queue'))
+    job = json.loads(workserver.redis.rpop('jobs_waiting_queue'))
     job_id = job['job_id']
     url = job['url']
     agency = job['agency'] if job.get('agency') else "other_agency"

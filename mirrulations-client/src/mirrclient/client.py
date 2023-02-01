@@ -132,7 +132,8 @@ class Validator:
             str response
         """
         try:
-            response = requests.get(f'{self.url}' + endpoint, **kwargs)
+            response = requests.get(f'{self.url}' + endpoint, **kwargs,
+                                    timeout=10)
             response.raise_for_status()
             return response
         except (HTTPError, RequestConnectionError):
